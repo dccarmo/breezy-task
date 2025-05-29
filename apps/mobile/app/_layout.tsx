@@ -1,29 +1,55 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Link, Stack, useRouter } from "expo-router";
+import { Pressable } from "react-native";
+import { X, Plus } from "lucide-react-native";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  const router = useRouter();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{
+          title: "Projects",
+          headerRight: () => (
+            <Link href="/add" asChild>
+              <Pressable>
+                <Plus size={24} />
+              </Pressable>
+            </Link>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="[projectId]/index"
+        options={{
+          title: "Project Details",
+        }}
+      />
+      <Stack.Screen
+        name="add"
+        options={{
+          title: "Add Project",
+          presentation: "modal",
+          headerRight: () => (
+            <Pressable onPress={() => router.dismiss()}>
+              <X size={24} />
+            </Pressable>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="[projectId]/edit"
+        options={{
+          title: "Edit Project",
+          presentation: "modal",
+          headerRight: () => (
+            <Pressable onPress={() => router.dismiss()}>
+              <X size={24} />
+            </Pressable>
+          ),
+        }}
+      />
+    </Stack>
   );
 }
