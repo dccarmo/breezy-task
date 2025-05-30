@@ -4,6 +4,7 @@ import { Pencil } from "lucide-react-native";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
+import { getFriendlyStatus } from "@/utils/project";
 
 export default function DetailsScreen() {
   const navigation = useNavigation();
@@ -33,6 +34,10 @@ export default function DetailsScreen() {
     });
   }, [navigation, projectId]);
 
+  if (!project) {
+    return null;
+  }
+
   return (
     <View
       style={{
@@ -41,11 +46,13 @@ export default function DetailsScreen() {
       }}
     >
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 24 }}>
-        {project?.name}
+        {project.name}
       </Text>
       <View style={{ gap: 16 }}>
-        <Text style={{ fontSize: 16 }}>Status: {project?.status}</Text>
-        <Text style={{ fontSize: 16 }}>Assignee: {project?.assignee}</Text>
+        <Text style={{ fontSize: 16 }}>
+          Status: {getFriendlyStatus(project.status)}
+        </Text>
+        <Text style={{ fontSize: 16 }}>Assignee: {project.assignee}</Text>
       </View>
     </View>
   );

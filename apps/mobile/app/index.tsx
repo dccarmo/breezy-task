@@ -1,14 +1,35 @@
 import { useTRPC } from "@/utils/trpc";
-import { useQuery } from "@tanstack/react-query";
+import { onlineManager, useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
+import React from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
-
-
+import { CircleSmall } from "lucide-react-native";
+import * as Network from "expo-network";
+import { getFriendlyStatus } from "@/utils/project";
 
 export default function ProjectListScreen() {
   const trpc = useTRPC();
 
-  const { data: projects = [] } = useQuery(trpc.getProjects.queryOptions());
+  const {
+    data: projects = [],
+    refetch,
+    isRefetching,
+  } = useQuery(trpc.getProjects.queryOptions());
+
+  const [isOnline, setIsOnline] = React.useState(onlineManager.isOnline());
+
+  React.useEffect(() => {
+    const eventSubscription = Network.addNetworkStateListener((state) => {
+      setIsOnline(!!state.isConnected);
+      onlineManager.setOnline(!!state.isConnected);
+    });
+    return eventSubscription.remove;
+  }, []);
+
+  const toggleOnline = () => {
+    onlineManager.setOnline(!isOnline);
+    setIsOnline(!isOnline);
+  };
 
   return (
     <FlatList
@@ -16,6 +37,44 @@ export default function ProjectListScreen() {
       contentContainerStyle={{
         padding: 16,
       }}
+      refreshing={isRefetching}
+      onRefresh={() => {
+        refetch();
+      }}
+      ListEmptyComponent={() => (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ fontSize: 16, fontWeight: "bold" }}>
+            No projects found
+          </Text>
+        </View>
+      )}
+      ListHeaderComponent={() => (
+        <View style={{ marginBottom: 16 }}>
+          <Pressable
+            onPress={toggleOnline}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              padding: 8,
+              backgroundColor: "white",
+              borderRadius: 8,
+              alignSelf: "flex-start",
+            }}
+          >
+            <CircleSmall
+              size={16}
+              fill={isOnline ? "green" : "red"}
+              color={isOnline ? "green" : "red"}
+            />
+            <Text style={{ fontSize: 16, fontWeight: "bold" }}>
+              {isOnline ? "online" : "offline"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
       renderItem={({ item }) => (
         <Link
           href={{
@@ -39,7 +98,9 @@ export default function ProjectListScreen() {
               <Text style={{ fontSize: 16, fontWeight: "bold" }}>
                 {item.name}
               </Text>
-              <Text style={{ fontSize: 14, color: "#666" }}>{item.status}</Text>
+              <Text style={{ fontSize: 14, color: "#666" }}>
+                {getFriendlyStatus(item.status)}
+              </Text>
             </View>
             <Text style={{ fontSize: 14, color: "#666" }}>{item.assignee}</Text>
           </Pressable>

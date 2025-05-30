@@ -13,7 +13,7 @@ const appRouter = t.router({
       z.object({
         id: z.string(),
         name: z.string().nonempty(),
-        status: z.enum(["backlog", "todo", "in-progress", "completed"]),
+        status: z.enum(["backlog", "todo", "inProgress", "completed"]),
         assignee: z.string().optional().nullable(),
       })
     )

@@ -1,5 +1,5 @@
 import { Link, Stack, useRouter } from "expo-router";
-import { Pressable } from "react-native";
+import { Platform, Pressable } from "react-native";
 import { X, Plus } from "lucide-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
@@ -14,7 +14,10 @@ export default function RootLayout() {
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: "http://localhost:4000/trpc",
+          url:
+            Platform.OS === "android"
+              ? "http://10.0.2.2:4000/trpc"
+              : "http://localhost:4000/trpc",
         }),
       ],
     })

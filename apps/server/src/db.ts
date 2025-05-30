@@ -1,7 +1,7 @@
 export type Project = {
   id: string;
   name: string;
-  status: "backlog" | "todo" | "in-progress" | "completed";
+  status: "backlog" | "todo" | "inProgress" | "completed";
   assignee: string | null;
 };
 

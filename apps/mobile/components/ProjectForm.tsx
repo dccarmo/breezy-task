@@ -14,6 +14,7 @@ import {
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "expo-router";
+import { getFriendlyStatus } from "@/utils/project";
 
 interface ProjectFormProps {
   projectId?: string | null;
@@ -22,7 +23,7 @@ interface ProjectFormProps {
 const formSchema = z.object({
   id: z.string().optional().nullable(),
   name: z.string().nonempty(),
-  status: z.enum(["backlog", "todo", "in-progress", "completed"]),
+  status: z.enum(["backlog", "todo", "inProgress", "completed"]),
   assignee: z.string().optional().nullable(),
 });
 
@@ -39,25 +40,78 @@ export default function ProjectForm({ projectId }: ProjectFormProps) {
     trpc.getProject.queryOptions(projectId ? { id: projectId } : skipToken)
   );
 
-  const { mutateAsync: upsertProject } = useMutation(
+  const { mutate: upsertProject } = useMutation(
     trpc.upsertProject.mutationOptions({
-      onSuccess: ({ id }) => {
-        queryClient.invalidateQueries({
+      onMutate: async (data) => {
+        await queryClient.cancelQueries({
+          queryKey: trpc.getProject.queryKey({ id: data.id }),
+        });
+
+        const previousProject = queryClient.getQueryData(
+          trpc.getProject.queryKey({ id: data.id })
+        );
+
+        queryClient.setQueryData(
+          trpc.getProject.queryKey({ id: data.id }),
+          (old) => {
+            return {
+              ...old,
+              ...{
+                id: data.id,
+                name: data.name,
+                status: data.status,
+                assignee: data.assignee ?? null,
+              },
+            };
+          }
+        );
+
+        await queryClient.cancelQueries({
           queryKey: trpc.getProjects.queryKey(),
         });
 
+        const previousProjects = queryClient.getQueryData(
+          trpc.getProjects.queryKey()
+        );
+
+        queryClient.setQueryData(trpc.getProjects.queryKey(), (old) => {
+          return [
+            ...(old ?? []).filter((project) => project.id !== data.id),
+            {
+              id: data.id,
+              name: data.name,
+              status: data.status,
+              assignee: data.assignee ?? null,
+            },
+          ];
+        });
+
+        return { previousProject, previousProjects };
+      },
+      onError: (error, data, context) => {
+        queryClient.setQueryData(
+          trpc.getProject.queryKey({ id: data.id }),
+          context?.previousProject
+        );
+
+        queryClient.setQueryData(
+          trpc.getProjects.queryKey(),
+          context?.previousProjects
+        );
+      },
+      onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({
-          queryKey: trpc.getProject.queryKey({ id }),
+          queryKey: trpc.getProject.queryKey({ id: variables.id }),
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: trpc.getProjects.queryKey(),
         });
       },
     })
   );
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<z.infer<typeof formSchema>>({
+  const { control, handleSubmit } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     values: {
       id: project?.id,
@@ -67,20 +121,13 @@ export default function ProjectForm({ projectId }: ProjectFormProps) {
     },
   });
 
-  console.log(errors);
-
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    console.log("onSubmit", data);
-    try {
-      await upsertProject({
-        id: data.id ?? uuidv4(),
-        name: data.name,
-        status: data.status ?? "backlog",
-        assignee: data.assignee,
-      });
-    } catch (error) {
-      console.error(error);
-    }
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    upsertProject({
+      id: data.id ?? uuidv4(),
+      name: data.name,
+      status: data.status ?? "backlog",
+      assignee: data.assignee,
+    });
 
     router.dismiss();
   };
@@ -139,10 +186,19 @@ export default function ProjectForm({ projectId }: ProjectFormProps) {
                 field.onChange(itemValue)
               }
             >
-              <Picker.Item label="Backlog" value="backlog" />
-              <Picker.Item label="To Do" value="todo" />
-              <Picker.Item label="In Progress" value="in-progress" />
-              <Picker.Item label="Completed" value="completed" />
+              <Picker.Item
+                label={getFriendlyStatus("backlog")}
+                value="backlog"
+              />
+              <Picker.Item label={getFriendlyStatus("todo")} value="todo" />
+              <Picker.Item
+                label={getFriendlyStatus("inProgress")}
+                value="inProgress"
+              />
+              <Picker.Item
+                label={getFriendlyStatus("completed")}
+                value="completed"
+              />
             </Picker>
           )}
         />
