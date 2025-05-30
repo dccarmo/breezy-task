@@ -2,10 +2,18 @@ import { Pressable, Text, View } from "react-native";
 import { Link, useLocalSearchParams, useNavigation } from "expo-router";
 import { Pencil } from "lucide-react-native";
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/utils/trpc";
 
 export default function DetailsScreen() {
   const navigation = useNavigation();
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
+
+  const trpc = useTRPC();
+
+  const { data: project } = useQuery(
+    trpc.getProject.queryOptions({ id: projectId })
+  );
 
   React.useEffect(() => {
     navigation.setOptions({
@@ -29,11 +37,16 @@ export default function DetailsScreen() {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+        padding: 16,
       }}
     >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 24 }}>
+        {project?.name}
+      </Text>
+      <View style={{ gap: 16 }}>
+        <Text style={{ fontSize: 16 }}>Status: {project?.status}</Text>
+        <Text style={{ fontSize: 16 }}>Assignee: {project?.assignee}</Text>
+      </View>
     </View>
   );
 }

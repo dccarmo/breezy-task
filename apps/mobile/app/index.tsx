@@ -1,22 +1,18 @@
-import { Link, useRouter } from "expo-router";
+import { useTRPC } from "@/utils/trpc";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
-type ProjectStatus = "Backlog" | "To Do" | "In Progress" | "Completed";
 
-const INITIAL_PROJECT = [
-  {
-    id: 1,
-    name: "Project 1",
-    status: "Backlog",
-    assignee: "John Doe",
-  },
-];
 
 export default function ProjectListScreen() {
-  const router = useRouter();
+  const trpc = useTRPC();
+
+  const { data: projects = [] } = useQuery(trpc.getProjects.queryOptions());
+
   return (
     <FlatList
-      data={INITIAL_PROJECT}
+      data={projects}
       contentContainerStyle={{
         padding: 16,
       }}
