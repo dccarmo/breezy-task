@@ -29,15 +29,19 @@ const formSchema = z.object({
 
 export default function ProjectForm({ projectId }: ProjectFormProps) {
   const isEdit = !!projectId;
-
   const router = useRouter();
 
   const trpc = useTRPC();
-
   const queryClient = useQueryClient();
 
   const { data: project } = useQuery(
-    trpc.getProject.queryOptions(projectId ? { id: projectId } : skipToken)
+    trpc.getProject.queryOptions(projectId ? { id: projectId } : skipToken, {
+      initialData: () => {
+        return queryClient
+          .getQueryData(trpc.getProjects.queryKey())
+          ?.find((project) => project.id === projectId);
+      },
+    })
   );
 
   const { mutate: upsertProject } = useMutation(

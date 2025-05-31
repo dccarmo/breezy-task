@@ -2,7 +2,7 @@ import { Pressable, Text, View } from "react-native";
 import { Link, useLocalSearchParams, useNavigation } from "expo-router";
 import { Pencil } from "lucide-react-native";
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { getFriendlyStatus } from "@/utils/project";
 
@@ -11,9 +11,19 @@ export default function DetailsScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
 
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const { data: project } = useQuery(
-    trpc.getProject.queryOptions({ id: projectId })
+    trpc.getProject.queryOptions(
+      { id: projectId },
+      {
+        initialData: () => {
+          return queryClient
+            .getQueryData(trpc.getProjects.queryKey())
+            ?.find((project) => project.id === projectId);
+        },
+      }
+    )
   );
 
   React.useEffect(() => {
@@ -46,7 +56,7 @@ export default function DetailsScreen() {
       }}
     >
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 24 }}>
-        {project.name}
+        {project?.name}
       </Text>
       <View style={{ gap: 16 }}>
         <Text style={{ fontSize: 16 }}>

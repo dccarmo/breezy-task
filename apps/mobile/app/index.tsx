@@ -13,7 +13,6 @@ export default function ProjectListScreen() {
   const {
     data: projects = [],
     refetch,
-    isRefetching,
   } = useQuery(trpc.getProjects.queryOptions());
 
   const [isOnline, setIsOnline] = React.useState(onlineManager.isOnline());
@@ -31,16 +30,22 @@ export default function ProjectListScreen() {
     setIsOnline(!isOnline);
   };
 
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
+
   return (
     <FlatList
       data={projects}
       contentContainerStyle={{
         padding: 16,
       }}
-      refreshing={isRefetching}
-      onRefresh={() => {
-        refetch();
-      }}
+      refreshing={isRefreshing}
+      onRefresh={onRefresh}
       ListEmptyComponent={() => (
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}

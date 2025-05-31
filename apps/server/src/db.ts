@@ -10,21 +10,21 @@ const db: { projects: Project[] } = {
 };
 
 export const createProject = (project: Project) => {
+  console.log("createProject", project);
   db.projects.push(project);
 };
 
 export const getProjects = () => {
+  console.log("getProjects", db.projects);
   return db.projects;
 };
 
 export const updateProject = (project: Project) => {
+  console.log("updateProject", project);
   db.projects = db.projects.map((p) => (p.id === project.id ? project : p));
 };
 
 export const getProject = (id: string) => {
+  console.log("getProject", id);
   return db.projects.find((p) => p.id === id);
-};
-
-export const deleteProject = (id: string) => {
-  db.projects = db.projects.filter((p) => p.id !== id);
 };
